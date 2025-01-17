@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/img/folder.jpg" type="image/icon type" />
+    <title>RAPID PR FMS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 flex justify-center items-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
+      <h2 class="text-2xl font-semibold text-blue-600 text-center mb-6">
+        Login
+      </h2>
+      <form method="POST" action="/login">
+        <div class="mb-4">
+          <label for="username" class="block text-sm font-medium text-gray-700"
+            >Username:</label
+          >
+          <input
+            type="text"
+            name="username"
+            id="username"
+            required
+            class="w-full p-3 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div class="mb-6">
+          <label for="password" class="block text-sm font-medium text-gray-700"
+            >Password:</label
+          >
+          <input
+            type="password"
+            name="password"
+            id="password"
+            required
+            class="w-full p-3 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Login
+        </button>
+      </form>
+    </div>
+  </body>
+</html>

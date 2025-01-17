@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAPID PR FMS</title>
+    <link rel="icon" href="/img/folder.jpg" type="image/icon type" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto p-6">
+      <!-- Section 1: Directory Creation and File Upload -->
+
+      <!-- Section 1: user  -->
+      <section class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white shadow-md rounded-lg p-6 text-center">
+          <h1 class="text-lg font-bold mb-4">
+            <span class="capitalize"><%= user.name %></span>
+          </h1>
+          <form
+            action="/logout"
+            method="POST"
+            onsubmit="return confirm('Are you sure you want to logout?');"
+          >
+            <button
+              type="submit"
+              class="bg-red-100 text-red-600 px-4 py-2 rounded hover:bg-red-200 transition duration-200"
+            >
+              LOGOUT
+            </button>
+          </form>
+        </div>
+
+        <% if (user.role === 'admin') { %>
+
+        <!-- Create Folder -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <form
+            action="/create-folder"
+            method="POST"
+            class="flex flex-col space-y-4"
+          >
+            <h2 class="text-xl font-semibold text-gray-700 flex items-center">
+              <img class="w-[30px] mr-4" src="/img/folder.jpg" /> Create New
+              Folder
+            </h2>
+            <div class="flex">
+              <input
+                type="text"
+                name="folderName"
+                placeholder="Enter folder name"
+                required
+                class="flex-grow p-3 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input type="hidden" name="currentPath" value="<%= folder %>" />
+              <button
+                type="submit"
+                class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600"
+              >
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- File Upload -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <form
+            id="uploadForm"
+            action="/upload"
+            method="POST"
+            enctype="multipart/form-data"
+            class="flex flex-col space-y-4"
+          >
+            <h2 class="text-xl font-semibold text-gray-700 flex items-center">
+              <img src="/img/up.jpg" class="w-[50px]" /> Upload Files
+            </h2>
+            <div class="flex flex-col space-y-4">
+              <input type="hidden" name="currentPath" value="<%= folder %>" />
+              <input
+                type="file"
+                name="videoFile"
+                accept=".mp4,.avi,.mkv,.zip"
+                required
+                class="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div id="progressContainer" class="hidden">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    id="progressBar"
+                    class="bg-blue-600 h-2.5 rounded-full"
+                    style="width: 0%"
+                  ></div>
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                  <span id="progressText">0%</span>
+                  <span id="uploadSpeed" class="ml-2"></span>
+                  <span id="timeRemaining" class="ml-2"></span>
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              >
+                Upload
+              </button>
+            </div>
+          </form>
+        </div>
+        <% } %>
+      </section>
+
+      <!-- Section 2: Folder Grid -->
+      <section class="mb-8">
+        <p class="text-semibold mb-3">⌂ root / <%= folder %></p>
+
+        <% if (folder !== "") { %>
+
+        <button
+          onclick="window.history.back();"
+          class="bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition duration-200 mb-5"
+        >
+          ← BACK
+        </button>
+
+        <% } %>
+
+        <h2 class="text-2xl font-semibold mb-4">Folders</h2>
+        <hr />
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <% folders.forEach(folder => { %>
+          <div
+            class="bg-white shadow-md rounded-lg p-3 flex flex-col items-center mt-4"
+          >
+            <a href="/list-files/<%= folder.path %>">
+              <img class="w-[100px]" src="/img/folder.jpg"
+            /></a>
+            <a
+              href="/list-files/<%= folder.path %>"
+              class="text-black hover:underline"
+            >
+              <%= folder.name %>
+            </a>
+            <div class="flex mt-2 mb-2 space-x-2">
+              <form action="/download-folder" method="POST">
+                <input
+                  type="hidden"
+                  name="folderPath"
+                  value="<%= folder.path %>"
+                />
+                <button
+                  type="submit"
+                  class="bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
+                >
+                  Download
+                </button>
+              </form>
+              <% if (user.role === 'admin') { %>
+              <form
+                action="/delete-folder"
+                method="POST"
+                onsubmit="return confirm('Are you sure you want to delete this folder?');"
+              >
+                <input
+                  type="hidden"
+                  name="folderPath"
+                  value="<%= folder.path %>"
+                />
+                <button
+                  type="submit"
+                  class="bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200"
+                >
+                  Delete
+                </button>
+              </form>
+              <% } %>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+      </section>
+
+      <!-- Section 3: Files List -->
+      <section>
+        <h2 class="text-2xl font-semibold mb-4">Files</h2>
+        <hr />
+        <div class="space-y-4">
+          <% items.forEach(item => { %>
+          <div
+            class="bg-white shadow-md rounded-lg p-4 flex justify-between items-center"
+          >
+            <div class="flex items-center space-x-4">
+              <span class="text-gray-500 text-2xl">📄</span>
+              <span class="text-gray-700 font-medium"><%= item.name %></span>
+            </div>
+
+            <div class="flex space-x-2">
+              <% if (item.name.endsWith('.mp4') || item.name.endsWith('.avi') ||
+              item.name.endsWith('.mkv')) { %>
+              <button
+                onclick="openVideoModal('<%= item.name %>')"
+                class="bg-blue-100 text-blue-600 px-3 py-1 rounded hover:bg-blue-200"
+              >
+                View
+              </button>
+              <% } %>
+
+              <form action="/download-file" method="POST">
+                <input
+                  type="hidden"
+                  name="filePath"
+                  value="<%= folder + '/' + item.name %>"
+                />
+                <button
+                  type="submit"
+                  class="bg-green-100 text-green-600 px-3 py-1 rounded hover:bg-green-200"
+                >
+                  Download
+                </button>
+              </form>
+              <% if (user.role === 'admin') { %>
+              <form
+                action="/delete-file"
+                method="POST"
+                onsubmit="return confirm('Are you sure you want to delete this file?');"
+              >
+                <input
+                  type="hidden"
+                  name="filePath"
+                  value="<%= folder + '/' + item.name %>"
+                />
+                <button
+                  type="submit"
+                  class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200"
+                >
+                  Delete
+                </button>
+              </form>
+              <% } %>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+      </section>
+    </div>
+
+
+<!-- Video Modal -->
+
+<!-- Video Modal -->
+<div id="videoModal" class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-50">
+  <div class="bg-black p-4 rounded-lg max-w-5xl w-full h-[650px] flex flex-col items-center relative select-none">
+    <!-- Close Button -->
+    <button 
+      id="modalCloseButton"
+      class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300 z-50 cursor-pointer p-2"
+      onclick="closeVideoModal()"
+    >
+      ✖
+    </button>
+
+    <!-- Video Container with Custom Controls -->
+    <div id="videoContainer" class="w-full h-full flex items-center justify-center relative select-none">
+      <div class="relative w-full h-full flex items-center justify-center">
+        <video 
+          id="videoModalPlayer"
+          class="rounded-lg select-none object-contain w-full h-full"
+          onclick="handleVideoClick(event)"
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      
+      <!-- Custom Video Controls -->
+      <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+        <!-- Progress Bar -->
+        <div class="w-full mb-4 relative">
+          <div id="mainProgressContainer" class="w-full h-1 bg-white/30 cursor-pointer rounded overflow-hidden group-hover:h-2 transition-all">
+            <div id="mainProgressBar" class="h-full bg-white" style="width: 0%"></div>
+          </div>
+          <!-- Time Display -->
+          <div class="flex justify-between text-white text-sm mt-2">
+            <span id="currentTime">0:00</span>
+            <span id="duration">0:00</span>
+          </div>
+          <!-- Time Preview Tooltip -->
+          <div id="timePreview" class="absolute bottom-6 bg-black/80 text-white px-2 py-1 rounded text-sm transform -translate-x-1/2 pointer-events-none hidden">
+            0:00
+          </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="flex items-center justify-between px-2">
+          <div class="flex items-center gap-4">
+            <button onclick="skipVideo(-5)" class="text-white px-3 py-1 rounded bg-white/10 select-none flex items-center gap-1">
+              <span class="text-sm">⏪</span><span class="text-xs">5s</span>
+            </button>
+            <button id="playPauseBtn" onclick="togglePlayPause()" class="text-white px-3 py-1 rounded bg-white/10 select-none">
+              ▶️
+            </button>
+            <button onclick="skipVideo(5)" class="text-white px-3 py-1 rounded bg-white/10 select-none flex items-center gap-1">
+              <span class="text-xs">5s</span><span class="text-sm">⏩</span>
+            </button>
+          </div>
+          
+          <button onclick="toggleFullscreen()" class="text-white px-3 py-1 rounded bg-white/10 select-none">
+            ⛶
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- Script -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const form = this;
+          const formData = new FormData(form);
+          const progressContainer =
+            document.getElementById("progressContainer");
+          const progressBar = document.getElementById("progressBar");
+          const progressText = document.getElementById("progressText");
+          const uploadSpeed = document.getElementById("uploadSpeed");
+          const timeRemaining = document.getElementById("timeRemaining");
+
+          progressContainer.classList.remove("hidden");
+
+          // Variables for speed calculation
+          let startTime = Date.now();
+          let lastLoaded = 0;
+
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener("progress", function (e) {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              progressBar.style.width = percent + "%";
+              progressText.textContent = percent + "%";
+
+              // Calculate speed
+              const currentTime = Date.now();
+              const timeElapsed = (currentTime - startTime) / 1000; // in seconds
+              const bytesPerSecond = e.loaded / timeElapsed;
+              const speed = formatSpeed(bytesPerSecond);
+              uploadSpeed.textContent = speed;
+
+              // Calculate time remaining
+              const remainingBytes = e.total - e.loaded;
+              const remainingTime = remainingBytes / bytesPerSecond;
+              timeRemaining.textContent = formatTimeRemaining(remainingTime);
+
+              lastLoaded = e.loaded;
+            }
+          });
+
+          xhr.addEventListener("load", function () {
+            if (xhr.status === 200) {
+              const response = JSON.parse(xhr.responseText);
+              if (response.success) {
+                window.location.href = response.redirectUrl;
+              }
+            } else {
+              alert("Upload failed: " + xhr.responseText);
+            }
+          });
+
+          xhr.addEventListener("error", function () {
+            alert("Upload failed. Please try again.");
+          });
+
+          xhr.open("POST", form.action, true);
+          xhr.send(formData);
+        });
+
+      function formatSpeed(bytesPerSecond) {
+        if (bytesPerSecond > 1024 * 1024) {
+          return (bytesPerSecond / (1024 * 1024)).toFixed(2) + " MB/s";
+        } else if (bytesPerSecond > 1024) {
+          return (bytesPerSecond / 1024).toFixed(2) + " KB/s";
+        }
+        return bytesPerSecond.toFixed(2) + " B/s";
+      }
+
+      function formatTimeRemaining(seconds) {
+        if (seconds < 60) {
+          return Math.round(seconds) + "s remaining";
+        } else if (seconds < 3600) {
+          return Math.round(seconds / 60) + "m remaining";
+        }
+        return Math.round(seconds / 3600) + "h remaining";
+      }
+    </script>
+    <!-- video script -->
+    <script>
+      let isVideoPlaying = false;
+      let isFullscreen = false;
+      let isDragging = false;
+      
+      const videoContainer = document.getElementById('videoContainer');
+      const videoPlayer = document.getElementById('videoModalPlayer');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const progressBar = document.getElementById('mainProgressBar');  // Updated ID
+      const progressContainer = document.getElementById('mainProgressContainer');
+      const timePreview = document.getElementById('timePreview');
+      const currentTimeDisplay = document.getElementById('currentTime');
+      const durationDisplay = document.getElementById('duration');
+      
+      
+      // Remove default controls and prevent context menu
+      videoPlayer.removeAttribute('controls');
+      videoContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+      
+      function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return "0:00";
+        const minutes = Math.floor(seconds / 60);
+        seconds = Math.floor(seconds % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    function updateProgress() {
+      if (!isDragging && videoPlayer.duration) {
+          const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+          progressBar.style.width = `${progress}%`;
+          currentTimeDisplay.textContent = formatTime(videoPlayer.currentTime);
+          durationDisplay.textContent = formatTime(videoPlayer.duration);
+      }
+  }
+      function updateVideoProgress(e) {
+          const rect = progressContainer.getBoundingClientRect();
+          const clickPosition = e.clientX - rect.left;
+          const pos = Math.max(0, Math.min(1, clickPosition / rect.width));
+          
+          if (videoPlayer.duration) {
+              const newTime = pos * videoPlayer.duration;
+              videoPlayer.currentTime = newTime;
+              progressBar.style.width = `${pos * 100}%`;
+              currentTimeDisplay.textContent = formatTime(newTime);
+          }
+      }
+      
+      // Progress bar events
+      progressContainer.addEventListener('click', (e) => {
+          updateVideoProgress(e);
+      });
+      
+      progressContainer.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          updateVideoProgress(e);
+      });
+      
+      progressContainer.addEventListener('mousemove', (e) => {
+          const rect = progressContainer.getBoundingClientRect();
+          const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          const previewTime = pos * videoPlayer.duration;
+          
+          timePreview.textContent = formatTime(previewTime);
+          timePreview.style.left = `${e.clientX - rect.left}px`;
+          timePreview.classList.remove('hidden');
+          
+          if (isDragging) {
+              updateVideoProgress(e);
+          }
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+          if (isDragging) {
+              updateVideoProgress(e);
+              e.preventDefault();
+          }
+      });
+      
+      document.addEventListener('mouseup', () => {
+          isDragging = false;
+          if (!progressContainer.matches(':hover')) {
+              timePreview.classList.add('hidden');
+          }
+      });
+      
+      progressContainer.addEventListener('mouseleave', () => {
+          if (!isDragging) {
+              timePreview.classList.add('hidden');
+          }
+      });
+      
+      // Video events
+      videoPlayer.addEventListener('loadedmetadata', () => {
+          durationDisplay.textContent = formatTime(videoPlayer.duration);
+          currentTimeDisplay.textContent = formatTime(0);
+          updateProgress();
+      });
+      
+      videoPlayer.addEventListener('timeupdate', updateProgress);
+      videoPlayer.addEventListener('seeking', updateProgress);
+      videoPlayer.addEventListener('seeked', updateProgress);
+      
+      videoPlayer.addEventListener('play', () => {
+          isVideoPlaying = true;
+          playPauseBtn.textContent = '⏸️';
+      });
+      
+      videoPlayer.addEventListener('pause', () => {
+          isVideoPlaying = false;
+          playPauseBtn.textContent = '▶️';
+      });
+      
+      // The rest of your existing functions remain the same
+      function openVideoModal(fileName) {
+          const modal = document.getElementById("videoModal");
+          videoPlayer.src = `/uploads/<%= folder ? folder + '/' : '' %>${fileName}`;
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
+          videoPlayer.play();
+      }
+      
+      function handleVideoClick(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          if (event.detail === 1) {
+              togglePlayPause();
+          } else if (event.detail === 2) {
+              toggleFullscreen(event);
+          }
+      }
+      
+      function toggleFullscreen(event) {
+          event?.preventDefault();
+          if (!document.fullscreenElement) {
+              videoContainer.requestFullscreen();
+              isFullscreen = true;
+          } else {
+              document.exitFullscreen();
+              isFullscreen = false;
+          }
+      }
+      
+      function closeVideoModal() {
+          const modal = document.getElementById("videoModal");
+          
+          if (document.fullscreenElement) {
+              document.exitFullscreen().then(cleanupAndClose).catch(cleanupAndClose);
+          } else {
+              cleanupAndClose();
+          }
+      
+          function cleanupAndClose() {
+              modal.classList.remove("flex");
+              modal.classList.add("hidden");
+              videoPlayer.pause();
+              videoPlayer.currentTime = 0;
+              isVideoPlaying = false;
+          }
+      }
+      
+      function skipVideo(seconds) {
+          if (videoPlayer) {
+              videoPlayer.currentTime += seconds;
+          }
+      }
+      
+      function togglePlayPause() {
+          if (videoPlayer.paused) {
+              videoPlayer.play();
+          } else {
+              videoPlayer.pause();
+          }
+      }
+      
+      // Keyboard controls
+      window.addEventListener("keydown", (event) => {
+          if (!document.getElementById("videoModal").classList.contains("hidden")) {
+              event.preventDefault();
+              
+              switch(event.key) {
+                  case "Escape":
+                      if (!isFullscreen) {
+                          closeVideoModal();
+                      }
+                      break;
+                  case " ":
+                      togglePlayPause();
+                      break;
+                  case "ArrowLeft":
+                      skipVideo(-5);
+                      break;
+                  case "ArrowRight":
+                      skipVideo(5);
+                      break;
+                  case "f":
+                      toggleFullscreen();
+                      break;
+              }
+          }
+      });
+      </script>
+    <script>
+      const socket = io();
+
+      // Modify the download-folder form submission
+      document
+        .querySelectorAll('form[action="/download-folder"]')
+        .forEach((form) => {
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            // Create progress modal if it doesn't exist
+            let progressModal = document.getElementById("zipProgressModal");
+            if (!progressModal) {
+              progressModal = document.createElement("div");
+              progressModal.id = "zipProgressModal";
+              progressModal.className =
+                "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden";
+              progressModal.innerHTML = `
+              <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+                <h3 class="text-lg font-semibold mb-4">Creating Zip File</h3>
+                <div class="mb-4">
+                  <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="zipProgressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                  </div>
+                  <div class="text-sm text-gray-600 mt-2">
+                    <span id="zipProgressText">0%</span> complete
+                  </div>
+                </div>
+                <p class="text-sm text-gray-500">Please don't close this window while the zip file is being created.</p>
+              </div>
+            `;
+              document.body.appendChild(progressModal);
+            }
+
+            // Show progress modal
+            progressModal.classList.remove("hidden");
+            progressModal.classList.add("flex");
+
+            // Submit form
+            const formData = new FormData(this);
+            fetch(this.action, {
+              method: "POST",
+              body: formData,
+            });
+          });
+        });
+
+      // Socket event handlers
+      socket.on("zip-progress", function (data) {
+        const progressBar = document.getElementById("zipProgressBar");
+        const progressText = document.getElementById("zipProgressText");
+        if (progressBar && progressText) {
+          progressBar.style.width = `${data.progress}%`;
+          progressText.textContent = `${data.progress}%`;
+        }
+      });
+
+      socket.on("zip-complete", function (data) {
+        // Hide progress modal
+        const progressModal = document.getElementById("zipProgressModal");
+        if (progressModal) {
+          progressModal.classList.add("hidden");
+          progressModal.classList.remove("flex");
+        }
+        // Reset progress
+        const progressBar = document.getElementById("zipProgressBar");
+        const progressText = document.getElementById("zipProgressText");
+        if (progressBar && progressText) {
+          progressBar.style.width = "0%";
+          progressText.textContent = "0%";
+        }
+      });
+
+      socket.on("zip-error", function (data) {
+        alert("Error creating zip file: " + data.error);
+        const progressModal = document.getElementById("zipProgressModal");
+        if (progressModal) {
+          progressModal.classList.add("hidden");
+          progressModal.classList.remove("flex");
+        }
+      });
+    </script>
+  </body>
+</html>
