@@ -10,8 +10,8 @@ Media Archive Solutions is a Node.js and Express based file management tool for 
 
 ## Default credentials
 The default accounts are defined in `auth/auth.js` and can be changed there:
-- **admin** / `RaPidPr2000`
-- **client** / `rapidPr2025`
+- **admin** / `user12345`
+- **client** / `user12345`
 
 ## Requirements
 - Node.js (18.x or later recommended)
