@@ -1,8 +1,9 @@
 const session = require("express-session");
 
+
 const users = {
-  client: { password: "rapidPr2025", role: "user" },
-  admin: { password: "RaPidPr2000", role: "admin" },
+  client: { password: "user12345", role: "user" },
+  admin: { password: "user12345", role: "admin" },
 };
 
 const authMiddleware = (req, res, next) => {
